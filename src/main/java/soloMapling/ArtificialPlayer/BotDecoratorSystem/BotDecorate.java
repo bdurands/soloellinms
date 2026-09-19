@@ -6,6 +6,8 @@ import client.inventory.InventoryType;
 import soloMapling.ArtificialPlayer.BotTier;
 import soloMapling.itemPool.EquipMetadataCache;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -18,7 +20,7 @@ public class BotDecorate {
      * population reads as a mix of casual and kitted-out players.
      * Tune to taste while experimenting.
      */
-    public static final double FULL_DECORATION_RATE = 0.5;
+    public static final double FULL_DECORATION_RATE = 1.0;
 
     public static int calculate_min_equip_level(short level) {
         int nearestLowInterval = (((level / 10) * 10) - 10) + 1;
@@ -296,15 +298,30 @@ public class BotDecorate {
         return random.nextInt(2);
     }
 
+    /**
+     * Strips all equipment inherited from the DB template character (CID 2)
+     * so the bot starts naked before decoration assigns fresh random gear.
+     */
+    private static void clearEquippedItems(Character bot) {
+        List<Short> slots = new ArrayList<>();
+        for (var item : bot.getInventory(InventoryType.EQUIPPED)) {
+            slots.add(item.getPosition());
+        }
+        for (short slot : slots) {
+            bot.getInventory(InventoryType.EQUIPPED).removeSlot(slot);
+        }
+    }
+
     public static void setBotVariables(Character bot) {
         BotTier tier = getRandomTier();
         bot.setTier(tier);
-        int level = generateBotLevel(tier, 10, 80);
+        int level = generateBotLevel(tier, 10, 50);
         int job = selectJobByLevel(level);
         bot.setGender(selectRandomGender());
         bot.setLevel(level);
         bot.setJob(Job.getById(job));
 
+        clearEquippedItems(bot);
         BotDecorateBody.decorateBotBody(bot);
 
         if (EquipMetadataCache.isInitialized()) {
@@ -355,6 +372,7 @@ public class BotDecorate {
         bot.setLevel(level);
         bot.setJob(Job.getById(job));
 
+        clearEquippedItems(bot);
         BotDecorateBody.decorateBotBody(bot);
 
         // Level 1-9 beginners get curated starter gear and nothing else (no

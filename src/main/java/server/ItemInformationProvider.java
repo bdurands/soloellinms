@@ -1748,7 +1748,7 @@ public class ItemInformationProvider {
             return items;
         }
         Collection<Item> itemz = new LinkedList<>();
-        if (chr.getJob() == Job.SUPERGM || chr.getJob() == Job.GM) {
+        if (chr.getJob() == Job.SUPERGM || chr.getJob() == Job.GM || soloMapling.ArtificialPlayer.BotHelpers.isBot(chr)) {
             for (Item item : items) {
                 Equip equip = (Equip) item;
                 equip.wear(true);

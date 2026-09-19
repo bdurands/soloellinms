@@ -194,7 +194,7 @@ public class ItemInformationProviderUtilities {
                 .nonCash()
                 .forGender(gender)
                 .levelBetween(minLevel, maxLevel)
-                .forJobExact(reqJob)
+                .forJob(reqJob)
                 .asList();
 
         // Fallback for bots above the v83 gear ceiling (~lv120): the primary window
@@ -208,7 +208,7 @@ public class ItemInformationProviderUtilities {
                     .nonCash()
                     .forGender(gender)
                     .maxLevel(maxLevel)
-                    .forJobExact(reqJob)
+                    .forJob(reqJob)
                     .asList();
             candidates = highestLevelBand(belowCap);
         }

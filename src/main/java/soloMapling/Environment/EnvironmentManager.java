@@ -638,6 +638,30 @@ public class EnvironmentManager {
         }
     }
 
+    public static void spawnAttackTestBotsRange(int minLevel, int maxLevel) {
+        debugprint(fmt("Spawning attack test bots with level range {}-{} on Henesys Hunting Ground 1...", minLevel, maxLevel));
+        for (TierSlot slot : ATTACK_TEST_SLOTS) {
+            ExecutorServiceManager.runAsync(() -> {
+                Character bot = createBotWithRetry(slot.pos(), HHG1, 5);
+                if (bot == null) {
+                    debugprint(fmt("Failed to spawn attack test bot at {}", slot.pos()));
+                    return;
+                }
+                int level = minLevel == maxLevel ? minLevel : java.util.concurrent.ThreadLocalRandom.current().nextInt(Math.min(minLevel, maxLevel), Math.max(minLevel, maxLevel) + 1);
+                int tier = 1;
+                if (level >= 120) tier = 4;
+                else if (level >= 70) tier = 3;
+                else if (level >= 30) tier = 2;
+                
+                bot.setLevel(level);
+                bot.setJob(Job.getById(slot.jobForTier(tier)));
+                EquipBot(bot, slot.weaponId());
+                setAndStartBots(List.of(bot.getId()), BotTypeManager.BotType.TEST_ATTACK_BOT);
+            });
+        }
+    }
+
+
     public static void spawnDropGameSpectatorsPotionShop() {
         debugprint("Spawning Drop Game Spectator bots in Henesys Potion Shop...");
         Point[] spots = {

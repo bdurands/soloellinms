@@ -83,6 +83,14 @@ public class EnvironmentCommand extends Command {
             ExecutorServiceManager.getExecutorService().execute(() -> handleTownPresence(params, c));
             return;
         }
+        if (params[0].equalsIgnoreCase("spawnfmshops")) {
+            ExecutorServiceManager.getExecutorService().execute(() -> handleSpawnFMShops(params, c));
+            return;
+        }
+        if (params[0].equalsIgnoreCase("trainscatter") || params[0].equalsIgnoreCase("scattertest")) {
+            ExecutorServiceManager.getExecutorService().execute(() -> handleTrainScatter(params, c));
+            return;
+        }
         if (params[0].equalsIgnoreCase("chatter")) {
             ExecutorServiceManager.getExecutorService().execute(() -> handleChatter(params, c));
             return;
@@ -367,10 +375,7 @@ public class EnvironmentCommand extends Command {
                 spawnAttackTestBots(1);
                 player.yellowMessage("Attack test bots spawning. Stand on the map so mobs move into reach.");
                 break;
-            case "scattertest":
-            case "trainscatter":
-                spawnScatterTest(c, 30);
-                break;
+
             case "starthotpotato":
                 SocialHotPotatoManager.getInstance().start();
                 player.yellowMessage("Social Hot Potato started.");
@@ -411,6 +416,12 @@ public class EnvironmentCommand extends Command {
     }
 
     public static void handleStringIntIntCommand(String input, int input2, int input3, Client c) {
+        if (input.equalsIgnoreCase("attacktest")) {
+            player.yellowMessage("Spawning attack test bots (levels " + input2 + "-" + input3 + ") on HHG1...");
+            soloMapling.Environment.EnvironmentManager.spawnAttackTestBotsRange(input2, input3);
+            return;
+        }
+
         Character fakechar = BotHelpers.getCharFromChannelStorage(input2);
         if (fakechar == null) {
             player.yellowMessage("Bot null");
@@ -431,10 +442,6 @@ public class EnvironmentCommand extends Command {
                 player.yellowMessage("Spawning tier-" + input2 + " attack test bots on Henesys Hunting Ground 1...");
                 spawnAttackTestBots(input2);
                 player.yellowMessage("Attack test bots spawning. Stand on the map so mobs move into reach.");
-                return;
-            case "scattertest":
-            case "trainscatter":
-                spawnScatterTest(c, input2);
                 return;
             case "fillerbot":
                 Point p1 = new Point(-548, 154);
@@ -531,6 +538,7 @@ public class EnvironmentCommand extends Command {
         player.yellowMessage("!env loadenv                     - run full environment startup");
         player.yellowMessage("-- FM Spawning --");
         player.yellowMessage("!env spawnfmbots                 - spawn FM entrance bots");
+        player.yellowMessage("!env spawnfmshops                - spawn all Free Market shops");
         player.yellowMessage("!env spawnmerchbots              - spawn merchant bots in FM entrance");
         player.yellowMessage("-- Henesys Spawning --");
         player.yellowMessage("!env spawnhenesysbots            - spawn Henesys wanderer bots");
@@ -587,15 +595,38 @@ public class EnvironmentCommand extends Command {
     // Dry-run the organic ground-spot scatter (BotSpotPicker): spawn `count` training bots across the
     // current map's reachable platforms, anchored at the GM's position. Lets you eyeball the spread the
     // wave-8 training spawn uses without restarting the world.
-    private static void spawnScatterTest(Client c, int count) {
+    private static void handleTrainScatter(String[] params, Client c) {
+        if (params.length < 2) {
+            c.getPlayer().dropMessage(5, "Usage: !env trainscatter <count> [minLevel] [maxLevel]");
+            return;
+        }
+        int count = 10;
+        try {
+            count = Integer.parseInt(params[1]);
+        } catch (NumberFormatException ignored) {}
+
+        int minLevel = 10;
+        int maxLevel = 55;
+        if (params.length >= 3) {
+            try {
+                minLevel = Integer.parseInt(params[2]);
+                maxLevel = minLevel;
+            } catch (NumberFormatException ignored) {}
+        }
+        if (params.length >= 4) {
+            try {
+                maxLevel = Integer.parseInt(params[3]);
+            } catch (NumberFormatException ignored) {}
+        }
+
         Character p = c.getPlayer();
         MapleMap map = p.getMap();
         Point from = p.getPosition();
-        p.yellowMessage("Scattering " + count + " training bots across map " + p.getMapId()
-                + " (anchored at your spot)...");
-        java.util.List<Integer> ids = spawnScatteredTrainingBots(map, from, count, 10, 55);
+        p.yellowMessage("Scattering " + count + " training bots (levels " + minLevel + "-" + maxLevel + ") across map " + p.getMapId() + "...");
+        java.util.List<Integer> ids = spawnScatteredTrainingBots(map, from, count, minLevel, maxLevel);
         p.yellowMessage("Scatter spawn complete. " + ids.size() + " training bots placed"
                 + (ids.size() < count ? " (some fell back to your spot - nav graph not baked?)" : "") + ".");
+        BotTypeManager.setAndStartBots(ids, BotTypeManager.BotType.TRAINING_BOT);
     }
 
     private static void spawnCasinoNpc(Client c) {
@@ -655,6 +686,29 @@ public class EnvironmentCommand extends Command {
                     s.sameLedgeSpawnCount(), s.ledgeSpanPx(), live, holders, s.shareCap()));
         }
         player.yellowMessage(String.format("claim total: %d holders across %d spots", totalHolders, p.spots().size()));
+    }
+
+    private static void handleSpawnFMShops(String[] params, Client c) {
+        Character p = c.getPlayer();
+        if (params.length == 1) {
+            soloMapling.FreeMarket.ArtificialFreeMarket.populateFreeMarketFull();
+            p.dropMessage(6, "Free Market shops are being populated in all rooms.");
+        } else {
+            for (int i = 1; i < params.length; i++) {
+                try {
+                    int roomNum = Integer.parseInt(params[i]);
+                    if (roomNum >= 1 && roomNum <= 22) {
+                        int mapId = 910000000 + roomNum;
+                        soloMapling.FreeMarket.ArtificialFreeMarket.populateFreeMarketRoom(mapId);
+                        p.dropMessage(6, "Free Market Room " + roomNum + " shops are being populated.");
+                    } else {
+                        p.dropMessage(6, "Invalid room number: " + roomNum + ". Must be between 1 and 22.");
+                    }
+                } catch (NumberFormatException e) {
+                    p.dropMessage(6, "Invalid room number: " + params[i]);
+                }
+            }
+        }
     }
 
 }

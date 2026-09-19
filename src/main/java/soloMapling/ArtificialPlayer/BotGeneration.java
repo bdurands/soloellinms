@@ -93,7 +93,6 @@ public class BotGeneration {
         int botId = SoloMaplingConstants.GameConstants.BOT_BASE_ID + currentBotCount.getAndIncrement();
         bot = setBotStats(bot, botId); // Bot onDemandBot
         addBotToServer(bot);
-        placeBotOnMap(bot, pos, map);
         // Decorate before the drop-down plays so the bot arrives fully dressed
         // (decoration is an in-memory cache lookup, takes microseconds).
         if (baseClass <= 0) {
@@ -101,6 +100,8 @@ public class BotGeneration {
         } else {
             setBotVariables(bot, baseClass, minLevel, maxLevel, forcedJobId);
         }
+        
+        placeBotOnMap(bot, pos, map);
         // Choreography sleeps ~2.5-6s in total; play it on a virtual thread so
         // mass spawning isn't gated on each bot's arrival animation. Drop-down ->
         // turn-around ordering is preserved because it's one sequential task.
@@ -164,7 +165,7 @@ public class BotGeneration {
         onDemandBot.setName("Console");
 
         onDemandBot.setID(botId);
-        onDemandBot.setFame(botId); // debug purposes
+        onDemandBot.setFame(0);
         onDemandBot.setLevel(69);
         onDemandBot.setJob(Job.getById(420));
 
@@ -176,7 +177,7 @@ public class BotGeneration {
         onDemandBot.setClient(getBotClient());
         onDemandBot.setName(getRandomCharacterIGN());
         onDemandBot.setID(botId);
-        onDemandBot.setFame(botId); // debug purposes
+        onDemandBot.setFame(0);
         return onDemandBot;
     }
 
